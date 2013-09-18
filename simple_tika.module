@@ -1,0 +1,45 @@
+<?php
+
+function simple_tika_entity_presave($entity, $type) {
+  if ($type === 'file') {
+    //dpm($entity, 'presave file entity');
+    $tika_jar_path = variable_get('simple_tika_jar_path', '/opt/tika-app-1.5-SNAPSHOT.jar');
+    exec("java -jar $tika_jar_path -j " . drupal_realpath($entity->uri) . ' 2>&1', $output, $ret);
+    if ($ret === 0) {
+      $metadata = json_decode(implode('',$output));
+      //dpm($metadata, 'metadata');
+      $info = field_info_instances('file');
+      //dpm($info);
+
+      if (array_key_exists($entity->type, $info)) {
+        foreach ($metadata as $k => $v) {
+          // Get field instance
+          $field_machine_name = 'field_' . strtolower(preg_replace('/[^\da-z]/i', '_', $k));
+          //dpm('trying to load ' . $field_machine_name);
+
+          if (array_key_exists($field_machine_name, $info[$entity->type])) {
+            //dpm('File has empty field ' . $field_machine_name . ', trying to populate');
+            //dpm($entity->$field_machine_name, 'current field value');
+            if (empty($entity->$field_machine_name) || empty($entity->$field_machine_name['und'])) {
+              $field = field_info_field($field_machine_name);
+              //dpm($field);
+              switch ($field['type']) {
+                case 'text':
+                  $entity->$field_machine_name = array(
+                    'und' => array(
+                      0 => array('value' => $v),
+                    ),
+                  );
+                  break;
+              }
+            }
+          }
+          // TODO: What if the field does not exist? Log its name? Auto-create option?
+
+        }
+      }
+
+    }
+  }
+}
+
