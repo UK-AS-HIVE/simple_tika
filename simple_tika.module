@@ -25,6 +25,7 @@ function simple_tika_entity_presave($entity, $type) {
               //dpm($field);
               switch ($field['type']) {
                 case 'text':
+                case 'datetime':
                   $entity->$field_machine_name = array(
                     'und' => array(
                       0 => array('value' => $v),
@@ -35,11 +36,25 @@ function simple_tika_entity_presave($entity, $type) {
             }
           }
           // TODO: What if the field does not exist? Log its name? Auto-create option?
+          elseif (variable_get('simple_tika_autocreate_unknown_fields', FALSE)) {
+            // TODO: create and populate new fields
+          }
 
         }
       }
 
     }
+    // We can also extract full text for the body
+    $body_field = variable_get('simple_tika_full_text_field', 'field_full_text');
+    if (empty($entity->$body_field) || empty($entity->$body_field['und']) || empty($entity->$body_field['und'][0])) {
+      unset($output);
+      exec("java -jar $tika_jar_path -T " . drupal_realpath($entity->uri) . ' 2>&1', $output, $ret);
+      if ($ret === 0) {
+        $output = implode("\n",$output);
+        $entity->$body_field = array('und' => array(0 => array('value' => $output, 'safe_value' => check_plain($output))));
+      }
+    }
+
   }
 }
 
