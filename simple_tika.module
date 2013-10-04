@@ -25,10 +25,16 @@ function simple_tika_entity_presave($entity, $type) {
               //dpm($field);
               switch ($field['type']) {
                 case 'text':
-                case 'datetime':
                   $entity->$field_machine_name = array(
                     'und' => array(
                       0 => array('value' => $v),
+                    ),
+                  );
+                  break;
+                case 'datetime':
+                  $entity->$field_machine_name = array(
+                    'und' => array(
+                      0 => array('value' => date("Y-m-d H:i:s", strtotime($v))),
                     ),
                   );
                   break;
