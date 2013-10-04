@@ -4,7 +4,7 @@ function simple_tika_entity_presave($entity, $type) {
   if ($type === 'file') {
     //dpm($entity, 'presave file entity');
     $tika_jar_path = variable_get('simple_tika_jar_path', '/opt/tika-app-1.5-SNAPSHOT.jar');
-    exec("java -jar $tika_jar_path -j " . drupal_realpath($entity->uri) . ' 2>&1', $output, $ret);
+    exec("java -jar $tika_jar_path -j \"" . str_replace('"','\"',drupal_realpath($entity->uri)) . '" 2>&1', $output, $ret);
     if ($ret === 0) {
       $metadata = json_decode(implode('',$output));
       //dpm($metadata, 'metadata');
@@ -48,7 +48,7 @@ function simple_tika_entity_presave($entity, $type) {
     $body_field = variable_get('simple_tika_full_text_field', 'field_full_text');
     if (empty($entity->$body_field) || empty($entity->$body_field['und']) || empty($entity->$body_field['und'][0])) {
       unset($output);
-      exec("java -jar $tika_jar_path -T " . drupal_realpath($entity->uri) . ' 2>&1', $output, $ret);
+      exec("java -jar $tika_jar_path -T \"" . str_replace('"','\"',drupal_realpath($entity->uri)) . '" 2>&1', $output, $ret);
       if ($ret === 0) {
         $output = implode("\n",$output);
         $entity->$body_field = array('und' => array(0 => array('value' => $output, 'safe_value' => check_plain($output))));
