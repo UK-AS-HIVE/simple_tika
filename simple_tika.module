@@ -38,6 +38,25 @@ function simple_tika_entity_presave($entity, $type) {
                     ),
                   );
                   break;
+                case 'taxonomy_term_reference':
+                  $vocab_machine_name = $field['settings']['allowed_values'][0]['vocabulary'];
+                  $term = taxonomy_get_term_by_name($v, strtolower($vocab_machine_name));
+                  if (!$term) {
+                    if ($vocab = taxonomy_vocabulary_machine_name_load($vocab_machine_name)) {
+                      $term = new stdClass();
+                      $term->name = check_plain($v);
+                      $term->vid = $vocab->vid;
+                      taxonomy_term_save($term);
+                    }
+                  }
+                  if ($term) {
+                    $entity->$field_machine_name = array(
+                      'und' => array(
+                        0 => array('tid' => $term->tid),
+                      ),
+                    );
+                  }
+                  break;
               }
             }
           }
